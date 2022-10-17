@@ -1,0 +1,5 @@
+conda create -n vrpy36 python=3.6
+conda activate vrpy36
+# this will download torch, size about 2442MB
+pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+pip install opencv-python==4.5.4.60
