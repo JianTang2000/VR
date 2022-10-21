@@ -18,6 +18,37 @@ def reduce_img(p=0.1):
             pass
 
 
+def reduce_train_img_label(p=0.1):
+    """
+    按照比例减少训练图片和对应的标签
+    """
+    todo_img_path = r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realData-AP-train-40\images\train"
+    todo_label_path = r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realData-AP-train-40\labels\train'
+    files = os.listdir(todo_img_path)
+    del_file_name_list = []
+    for file in files:
+        if tools.random_true(p):
+            del_file_name_list.append(file)
+            os.remove(os.path.join(todo_img_path, file))
+        else:
+            pass
+    for file in del_file_name_list:
+        txt_name = file.replace(".jpg", ".txt")
+        os.remove(os.path.join(todo_label_path, txt_name))
+
+
+def del_non_img_label():
+    img_path = r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realData-AP-train-20\images\train"
+    label_path = r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realData-AP-train-20\labels\train"
+    imgs = os.listdir(img_path)
+    labels = os.listdir(label_path)
+    for label in labels:
+        if imgs.__contains__(label.replace(".txt", ".jpg")):
+            pass
+        else:
+            os.remove(os.path.join(label_path, label))
+
+
 def copy_rename_files(new_name_start="1003-paper-1-", use_rate=1):
     """
     把 todo_path 的带txt和jpg的文件copy并rename再放到save_path里, 使用比例为 0-1 --> 0-100%
@@ -55,8 +86,8 @@ def copy_rename_files_all(new_name_start="1003-paper-1-"):
 
 
 def split_train_test():
-    todo_path = r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\labeled\00selected-to-use-V&R-5-classes-no-man\1-real"
-    save_path = r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\labeled\00selected-to-use-V&R-5-classes-no-man\nofilter-real-to-train'
+    todo_path = r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realDara-Ap-train-no-split"
+    save_path = r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realData-AP-train'
     if not os.path.isdir(os.path.join(save_path, r'images\train')):
         os.makedirs(os.path.join(save_path, r'images\train'))
     if not os.path.isdir(os.path.join(save_path, r'images\val')):
@@ -77,7 +108,7 @@ def split_train_test():
     files = os.listdir(todo_path)
     files = [i for i in files if i.endswith('.jpg')]
     for file in files:
-        if tools.random_true(0.7):
+        if tools.random_true(0.22222):
             img_path = os.path.join(todo_path, file)
             img_path_new = os.path.join(os.path.join(save_path, r'images\train'), file)
             label_path = os.path.join(todo_path, file.replace('.jpg', '.txt'))
@@ -146,7 +177,9 @@ def txt_classes_num_summary():
 
 if __name__ == "__main__":
     # reduce_img(p=0.1)
-    copy_rename_files_all()
+    # copy_rename_files_all()
     # split_train_test()
     # txt_classes_num_summary()
     # move()
+    # reduce_train_img_label(p=0.18)
+    del_non_img_label()

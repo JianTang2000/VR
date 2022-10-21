@@ -51,7 +51,6 @@ def hist_var():
     plt.show()
 
 
-
 def hist_var2():
     var_vague = []
     vague_imgs = os.listdir(r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\labeled\00selected-to-use-V&R-5-classes-no-man\tmp\classification2\vague")
