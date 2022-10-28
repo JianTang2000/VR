@@ -86,8 +86,8 @@ def copy_rename_files_all(new_name_start="1003-paper-1-"):
 
 
 def split_train_test():
-    todo_path = r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realDara-Ap-train-no-split"
-    save_path = r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\fig1-realData-AP-train'
+    todo_path = r"C:\Users\jiant\Desktop\tmp"
+    save_path = r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\figX-virtual-ball'
     if not os.path.isdir(os.path.join(save_path, r'images\train')):
         os.makedirs(os.path.join(save_path, r'images\train'))
     if not os.path.isdir(os.path.join(save_path, r'images\val')):
@@ -108,7 +108,7 @@ def split_train_test():
     files = os.listdir(todo_path)
     files = [i for i in files if i.endswith('.jpg')]
     for file in files:
-        if tools.random_true(0.22222):
+        if tools.random_true(0.7):
             img_path = os.path.join(todo_path, file)
             img_path_new = os.path.join(os.path.join(save_path, r'images\train'), file)
             label_path = os.path.join(todo_path, file.replace('.jpg', '.txt'))
@@ -124,26 +124,16 @@ def split_train_test():
             shutil.copy(label_path, label_path_new)
 
 
-def move(use_rate=1):
-    todo_path = r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\labeled\00selected-to-use-V&R-5-classes-no-man\1-real"
-    save_path = r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\labeled\00selected-to-use-V&R-5-classes-no-man\nofilter-real-to-train\images\val'
-    files = os.listdir(todo_path)
-    files_leave = os.listdir(r"C:\Users\jiant\Desktop\data\V&R-objectDetectionData\labeled\00selected-to-use-V&R-5-classes-no-man\nofilter-real-to-train\images\train")
-    files_leave = [i for i in files_leave if i.endswith("txt")]
-    txts = [i for i in files if i.endswith("txt")]
-    txts = [i for i in txts if i not in files_leave]
-    for txt in txts:
-        if tools.random_true(use_rate):
-            if txt != "classes.txt":
-                txt_full_path = os.path.join(todo_path, txt)
-                new_txt_name = "1001_r_1_" + txt
-                new_txt_full_path = os.path.join(save_path, new_txt_name)
-                shutil.copy(txt_full_path, new_txt_full_path)
-
-                jpg_full_path = os.path.join(todo_path, txt.replace(".txt", ".jpg"))
-                new_jpg_name = "1001_r_1_" + txt.replace(".txt", ".jpg")
-                new_jpg_full_path = os.path.join(save_path, new_jpg_name)
-                shutil.copy(jpg_full_path, new_jpg_full_path)
+def copy_txt_to_img(use_rate=1):
+    label_path = r"C:\Users\jiant\Desktop\tmp\l"
+    img_path = r'C:\Users\jiant\Desktop\tmp\10'
+    labels = os.listdir(label_path)
+    imgs = os.listdir(img_path)
+    for img in imgs:
+        txt_name = img.replace(".jpg", ".txt")
+        if labels.__contains__(txt_name):
+            txt_path = os.path.join(img_path, txt_name)
+            shutil.copy(os.path.join(label_path, txt_name), txt_path)
 
 
 def txt_classes_num_summary():
@@ -180,6 +170,6 @@ if __name__ == "__main__":
     # copy_rename_files_all()
     # split_train_test()
     # txt_classes_num_summary()
-    # move()
+    copy_txt_to_img()
     # reduce_train_img_label(p=0.18)
-    del_non_img_label()
+    # del_non_img_label()

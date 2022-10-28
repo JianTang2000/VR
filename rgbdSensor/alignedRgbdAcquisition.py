@@ -1,6 +1,17 @@
 # -*- encoding: utf-8 -*-
 """
-获取对齐的 RGB-D 图片
+aligned-rgbd-acquisition-fps-test.py
+测试硬件设备在all不同变量组合下的表现
+=====变量：img_size    -- edit about line-47 to change img_size
+1 640, 360   -- 更小的设备不支持了
+2 960, 540
+3 1280, 720
+=====变量：电源
+1  type-c 33w 5V-3A 直插供电
+2  电池 12.0V 11.5 11 11 10.5   ---再低就要机器人就要充电了
+=====变量：操作系统
+1  Ubuntu 20.04.5 LTS   -- 这个经典的的操作系统
+2  Raspberry Pi OS   -- 机器人用的这个操作系统
 """
 import time
 import pyrealsense2 as rs
@@ -28,14 +39,26 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+# supported size
+# Depth
+# 320x240
+# 640x480
+# 1024x768
+#
+# Color
+# 640x360
+# 640x480
+# 960x540
+# 1280x720
 
-if device_product_line == 'L500':
-    config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
-else:
-    # config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
-    config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)  # faster
-    # config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)  # 这个 H FOV 会变小 所以不行
+# config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
+# config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
+config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
+
+config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+
 
 # Start streaming
 profile = pipeline.start(config)
@@ -90,25 +113,21 @@ def main():
     """
     640, 480 -- img size
     """
-    rectangle_color = (0, 123, 123)  # 黑色 (0, 0, 0)
-    txt_color = (0, 255, 127)
     distance_min = 0.12  # 小于该值的深度值应等于0,即此处深度计算失效
+    vis = True
     while True:
         t1 = time.time()
         _color_image, _depth_colormap, _depth_image_matrix = get_img_depth()
-        print("frame update GAP = ", time.time() - t1)
+        print("================> frame update GAP = ", time.time() - t1)
         # cv2.line(_color_image, (320, 0), (320, 480), (0, 255, 0), 2)
-        print("============================================================")
-        print("============================================================")
         _height = _depth_image_matrix.shape[0]
         _width = _depth_image_matrix.shape[1]
         print(f"=====acquired img has shape {_height} * {_width}==================================")
-
-        _y_min_block = 220 - 5  # 矩形区域上方坐标（最上=0，最下=720）
-        _y_max_block = 220 + 5  # 矩形区域下方坐标
-        method_name(_depth_colormap, _color_image, _depth_image_matrix, distance_min, rectangle_color, txt_color, _y_max_block, _y_min_block)
-
-        if True:
+        object_box1 = _depth_image_matrix[200:210, 100:120].astype(float)
+        no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
+        dist1 = compute_mean(object_box1)
+        print(f"=====acquired img dist at [200:210, 100:120] is {dist1}, and no_depth area is {no_depth_area1}%")
+        if vis:
             cv2.namedWindow('RGB')
             cv2.namedWindow('Depth')
             cv2.imshow('RGB', _color_image)
@@ -123,18 +142,6 @@ def compute_mean(array_in, N=2):
     exist = (array_in != 0)
     mean_value = array_in.sum() / exist.sum()
     return round(mean_value, N)
-
-
-def method_name(_depth_colormap, _color_image, _depth_image_matrix, distance_min_, rectangle_color, txt_color, y_max_block_, y_min_block_):
-    # distance_min_ = 0.01
-    object_box1 = _depth_image_matrix[y_min_block_:y_max_block_, 315:325].astype(float)
-    no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min_) / object_box1.size, 2)
-    dist1 = compute_mean(object_box1)
-    # put info on the img
-    cv2.rectangle(_depth_colormap, (315, y_min_block_), (325, y_max_block_), rectangle_color, 1)
-    cv2.rectangle(_color_image, (315, y_min_block_), (325, y_max_block_), rectangle_color, 1)
-    txt = str(round(dist1, 2)) + "," + str(no_depth_area1)
-    cv2.putText(_depth_colormap, txt, (315, int((y_min_block_ + y_max_block_) / 2) - 10), 0, 1.5, txt_color, 2, 4)
 
 
 if __name__ == "__main__":
