@@ -22,6 +22,7 @@ from openal import *
 from openal.al import *
 from queue import Queue
 import threading
+import os
 
 app = Flask(__name__)
 CORS(app, resources=r'/*')
@@ -44,14 +45,34 @@ _listener = oalGetListener()
 qq = Queue(2)  # 用来存储Unity数据的队列
 
 
-def speak_str(context_str):
+# # 抛弃掉的旧的发声方式,因为不清晰
+def speak_str_windows(context_str):
     """
-    linux windows 通用的发声方法 based on pyttsx3
+    linux windows 通用的发声方法 based on pyttsx3 树莓派上不清晰,请使用 speak_str
     """
+    print(context_str)
     voice_engine = pyttsx3.init()
     voice_engine.setProperty('voice', 'zh')
     voice_engine.say(context_str)
     voice_engine.runAndWait()
+
+
+def speak_str(context_str, current_directory="./audio_file"):
+    """
+    树莓派上 发声方法
+    """
+    if context_str == "ahead":
+        file_name = "正前方"
+    else:
+        index = context_str.find("left")
+        space_index = context_str.find(" ")
+        if index == -1:
+            file_name = "右转_"
+        else:
+            file_name = "左转_"
+        file_name += context_str[space_index + 1:]
+    file_name += ".mp3"
+    os.system("mpg123 " + os.path.join(current_directory, file_name))
 
 
 def play_by_distance(lr_direction, listener, source1, distance=1, sleep_gap=0.05):
@@ -123,7 +144,7 @@ def play_by_angle(player_rotation_y, direction_lr, angle, remaining_distance=100
                 speak_str(f"ahead")
                 return
             else:
-                spoken_context = direction_lr.strip() + f", {int(float(angle))} degrees"
+                spoken_context = direction_lr.strip() + f", {int(float(angle))}"
                 speak_str(spoken_context)
                 return
         elif feedback_mod == "once verbal":
@@ -132,7 +153,7 @@ def play_by_angle(player_rotation_y, direction_lr, angle, remaining_distance=100
                 time.sleep(10)  # sleep 10秒 期间 audio encoder 对外界请求无响应。 模拟只播放一次的响应
                 return
             else:
-                spoken_context = direction_lr.strip() + f", {int(float(angle))} degrees"
+                spoken_context = direction_lr.strip() + f", {int(float(angle))}"
                 speak_str(spoken_context)
                 time.sleep(10)  # sleep 10秒 期间 audio encoder 对外界请求无响应。 模拟只播放一次的响应
                 return
