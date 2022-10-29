@@ -18,7 +18,7 @@ import IMU.core as imu  # 这行需要更改,并且其中的串口名称也需�
 # #######################这部分是超参数#########################
 
 sock = U.UdpComms(udpIP="127.0.0.1", portTX=8000, portRX=8001, enableRX=True, suppressWarnings=True)  # 发送到Unity, IP写Unity 所在主机IP
-IMU_port = "COM3"  # windows
+IMU_port = "COM7"  # windows
 IMU_baudrate = 921600
 
 

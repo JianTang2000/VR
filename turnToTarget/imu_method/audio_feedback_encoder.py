@@ -12,6 +12,7 @@ sys.path.append(r"../../..")
 sys.path.append(r"../..")
 sys.path.append(r"..")
 import pyttsx3
+from playsound import playsound
 from flask_cors import CORS
 from gevent import pywsgi
 from flask import Flask, request, Response
@@ -27,7 +28,7 @@ import os
 app = Flask(__name__)
 CORS(app, resources=r'/*')
 # #######################这部分是超参数#########################
-ip = str("192.168.0.103")  # IP 和 Unity 所在主机 IP要一致
+ip = str("192.168.0.114")  # IP 和 Unity 所在主机 IP要一致
 port = str(8211)  # port 和 Unity 侧请求的port要一致
 # feedback_mod = "continuous spatial cues complex"  # 4种反馈方式选一种
 # feedback_mod = "continuous spatial cues"
@@ -35,6 +36,7 @@ feedback_mod = "continuous verbal"
 # feedback_mod = "once verbal"
 angle_error = 2.5  # 误差在此范围内则认为已经对齐
 reached_distance = 0.5  # 距离在次距离内则认为已经到达了目标
+windows_not_raspberry = True
 # ###############################################################
 # spatial cues 正弦波声
 source300 = oalOpen("../../materials/300.wav")  # 对应direction 3 # 长度=0.1s
@@ -45,19 +47,19 @@ _listener = oalGetListener()
 qq = Queue(2)  # 用来存储Unity数据的队列
 
 
-# # 抛弃掉的旧的发声方式,因为不清晰
-def speak_str_windows(context_str):
-    """
-    linux windows 通用的发声方法 based on pyttsx3 树莓派上不清晰,请使用 speak_str
-    """
-    print(context_str)
-    voice_engine = pyttsx3.init()
-    voice_engine.setProperty('voice', 'zh')
-    voice_engine.say(context_str)
-    voice_engine.runAndWait()
+# # # 抛弃掉的旧的发声方式,因为不清晰
+# def speak_str_windows(context_str):
+#     """
+#     linux windows 通用的发声方法 based on pyttsx3 树莓派上不清晰,请使用 speak_str
+#     """
+#     print(context_str)
+#     voice_engine = pyttsx3.init()
+#     voice_engine.setProperty('voice', 'zh')
+#     voice_engine.say(context_str)
+#     voice_engine.runAndWait()
 
 
-def speak_str(context_str, current_directory="./audio_file"):
+def speak_str(context_str, current_directory="../../materials/audio_file"):
     """
     树莓派上 发声方法
     """
@@ -72,7 +74,10 @@ def speak_str(context_str, current_directory="./audio_file"):
             file_name = "左转_"
         file_name += context_str[space_index + 1:]
     file_name += ".mp3"
-    os.system("mpg123 " + os.path.join(current_directory, file_name))
+    if windows_not_raspberry:
+        playsound(os.path.join(current_directory, file_name))
+    else:
+        os.system("mpg123 " + os.path.join(current_directory, file_name))
 
 
 def play_by_distance(lr_direction, listener, source1, distance=1, sleep_gap=0.05):
