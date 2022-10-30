@@ -11,7 +11,7 @@ import sys
 sys.path.append(r"../../..")
 sys.path.append(r"../..")
 sys.path.append(r"..")
-import pyttsx3
+# import pyttsx3
 from playsound import playsound
 from flask_cors import CORS
 from gevent import pywsgi
@@ -28,11 +28,11 @@ import os
 app = Flask(__name__)
 CORS(app, resources=r'/*')
 # #######################这部分是超参数#########################
-ip = str("192.168.0.114")  # IP 和 Unity 所在主机 IP要一致
+ip = str("192.168.0.106")  # IP 和 Unity 所在主机 IP要一致
 port = str(8211)  # port 和 Unity 侧请求的port要一致
-# feedback_mod = "continuous spatial cues complex"  # 4种反馈方式选一种
+feedback_mod = "continuous spatial cues complex"  # 4种反馈方式选一种
 # feedback_mod = "continuous spatial cues"
-feedback_mod = "continuous verbal"
+# feedback_mod = "continuous verbal"
 # feedback_mod = "once verbal"
 angle_error = 2.5  # 误差在此范围内则认为已经对齐
 reached_distance = 0.5  # 距离在次距离内则认为已经到达了目标

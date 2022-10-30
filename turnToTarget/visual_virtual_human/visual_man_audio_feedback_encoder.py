@@ -19,7 +19,6 @@ from gevent import pywsgi
 from flask import Flask, request, Response
 import jsonpickle
 import time
-from openal import *
 from queue import Queue
 import threading
 import numpy as np
@@ -53,6 +52,7 @@ def human_nav_play(cv2_rgb, v5_model_ins):
 
 
 def consume_stream2(threadName, qq1, v5_model_ins, only_vis=False, vis_and_save=False):
+    count_save_num = 0
     while True:
         try:
             if not qq1.empty():
@@ -62,15 +62,13 @@ def consume_stream2(threadName, qq1, v5_model_ins, only_vis=False, vis_and_save=
                 np_img = np.fromstring(rgb_str, np.uint8)
                 # convert numpy array to image
                 cv2_rgb = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
-                count = 0
                 if only_vis:
                     cv2.namedWindow('RGB')
                     cv2.imshow('RGB', cv2_rgb)
                     key = cv2.waitKey(1)
                 elif vis_and_save:
                     date = time.strftime("%Y-%m-%d-%H-%M-%S")
-                    name = str(date) + "-" + str(count) + ".jpg"
-                    count += 1
+                    name = str(date) + "-" + str(count_save_num) + ".jpg"
                     cv2.imwrite(name, cv2_rgb)
                 else:
                     human_nav_play(cv2_rgb, v5_model_ins)
@@ -89,8 +87,8 @@ class myThread2(threading.Thread):
         self.threadID = threadID
         self.name = name
         self.qq1 = qq1
-        # self.model = torch.hub.load(r'C:\Users\jiant\Desktop\code\yolov5', 'custom',
-        #                             path=r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\results\exp62-n-PureVirtual-300-train+100-test\weights\best.pt',
+        # self.model = torch.hub.load(r'C:\Users\jt\Desktop\work\yolov5', 'custom',
+        #                             path=r'C:\Users\jt\Desktop\data\weights\exp62-n-PureVirtual-300-train+100 test\weights\best.pt',
         #                             source='local',
         #                             device='cpu')
         self.model = torch.hub.load('/home/pi/jian/yolov5', 'custom',
