@@ -31,7 +31,7 @@ from turnToTarget.imu_method import audio_feedback_encoder
 app = Flask(__name__)
 CORS(app, resources=r'/*')
 # #######################这部分是超参数#########################
-ip = str("192.168.0.103")  #
+ip = str("127.0.0.1")  #
 port = str(8211)  # port 和 Unity 侧请求的port要一致
 target_obj_id = virtual_robot_controller.target_obj_id
 img_size = virtual_robot_controller.img_size
@@ -51,7 +51,7 @@ def human_nav_play(cv2_rgb, v5_model_ins):
     audio_feedback_encoder.play_by_angle(None, direction_lr, angle)
 
 
-def consume_stream2(threadName, qq1, v5_model_ins, only_vis=False, vis_and_save=False):
+def consume_stream2(threadName, qq1, v5_model_ins, only_vis=False, vis_and_save=True):
     count_save_num = 0
     while True:
         try:
@@ -67,8 +67,8 @@ def consume_stream2(threadName, qq1, v5_model_ins, only_vis=False, vis_and_save=
                     cv2.imshow('RGB', cv2_rgb)
                     key = cv2.waitKey(1)
                 elif vis_and_save:
-                    date = time.strftime("%Y-%m-%d-%H-%M-%S")
-                    name = str(date) + "-" + str(count_save_num) + ".jpg"
+                    date = time.strftime('%Y-%m-%d %H:%M:%S.%f')
+                    name = str(date).replace(",", "-") + "-" + str(count_save_num) + ".jpg"
                     cv2.imwrite(name, cv2_rgb)
                 else:
                     human_nav_play(cv2_rgb, v5_model_ins)

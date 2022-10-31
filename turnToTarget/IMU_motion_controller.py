@@ -6,10 +6,12 @@ IMU 读取 heading 并控制 Unity player 转动, 这个运动控制在多种测
 IMU初始化角度归零要热启动，也就是先插线，然后启动个几次 （中间不要抽掉线）,充分的完整自我矫正之后。 再开始正式的测试。
 """
 
-import time
 import serial
 from threading import Thread
 from statistics import mean
+import time
+import requests
+import json
 
 # custom packages
 from util import UdpComms as U
@@ -17,12 +19,14 @@ import IMU.core as imu  # 这行需要更改,并且其中的串口名称也需�
 
 # #######################这部分是超参数#########################
 
-sock = U.UdpComms(udpIP="127.0.0.1", portTX=8000, portRX=8001, enableRX=True, suppressWarnings=True)  # 发送到Unity, IP写Unity 所在主机IP
+sock = U.UdpComms(udpIP="192.168.0.105", portTX=8000, portRX=8001, enableRX=True, suppressWarnings=True)  # 发送到Unity, IP写Unity 所在主机IP
 IMU_port = "COM7"  # windows
 IMU_baudrate = 921600
 
 
 # ###############################################################
+
+
 def sen_msg(msg):
     print(f"sending msg {msg}......")
     sock.SendData(str(msg))  # Send this string to other application
@@ -58,17 +62,21 @@ class ImuThread(Thread):
                 _tmp_imu_data = imu.get_one_data(_hf_imu)
                 # print(f"time cost for get one data is  {time.time() - t1} and yaw is ---- {_tmp_imu_data[8]} -----", )
                 yaw = round(float(_tmp_imu_data[8]), 4)
-                if self.count_100 <= 100:
+                if self.count_100 <= 1000:
                     yaw_init_list.append(yaw)
                     self.count_100 += 1
                     continue
                 else:
                     if not self.init_yaw:
-                        self.yaw_start_value = mean(yaw_init_list[50:])
+                        self.yaw_start_value = mean(yaw_init_list[500:])
                         self.init_yaw = True
                         continue
                     else:
-                        spin_msg = "yaw_" + str(yaw - self.yaw_start_value)  # 这个报文结构在Unity UPD 接收段会有特定的解析代码
+                        response = requests.post("http://192.168.0.110:8029/getPosition")
+                        response_dict = json.loads(response.text)
+                        x_coord = float(response_dict['x'])
+                        z_coord = float(response_dict['y'])
+                        spin_msg = f"training={x_coord}={z_coord}=" + str(yaw - self.yaw_start_value)  # 这个报文结构在Unity UPD 接收段会有特定的解析代码
                         self.previous_yaw = yaw
                         sen_msg(spin_msg)
                         time.sleep(0.05)  # IMU 频率很高,没必要这么高的速率，这里控制到 20 FPS
