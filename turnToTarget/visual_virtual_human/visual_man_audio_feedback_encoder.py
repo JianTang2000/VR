@@ -24,6 +24,7 @@ import threading
 import numpy as np
 import cv2
 import torch
+import datetime
 
 from turnToTarget.visual_virtual_robot import virtual_robot_controller
 from turnToTarget.imu_method import audio_feedback_encoder
@@ -31,7 +32,7 @@ from turnToTarget.imu_method import audio_feedback_encoder
 app = Flask(__name__)
 CORS(app, resources=r'/*')
 # #######################这部分是超参数#########################
-ip = str("127.0.0.1")  #
+ip = str("192.168.0.105")  #
 port = str(8211)  # port 和 Unity 侧请求的port要一致
 target_obj_id = virtual_robot_controller.target_obj_id
 img_size = virtual_robot_controller.img_size
@@ -67,7 +68,7 @@ def consume_stream2(threadName, qq1, v5_model_ins, only_vis=False, vis_and_save=
                     cv2.imshow('RGB', cv2_rgb)
                     key = cv2.waitKey(1)
                 elif vis_and_save:
-                    date = time.strftime('%Y-%m-%d %H:%M:%S.%f')
+                    date = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
                     name = str(date).replace(",", "-") + "-" + str(count_save_num) + ".jpg"
                     cv2.imwrite(name, cv2_rgb)
                 else:
