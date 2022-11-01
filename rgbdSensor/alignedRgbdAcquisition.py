@@ -55,10 +55,9 @@ if not found_rgb:
 # config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
 config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
 
-config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
 config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
-
 
 # Start streaming
 profile = pipeline.start(config)
@@ -115,19 +114,36 @@ def main():
     """
     distance_min = 0.12  # 小于该值的深度值应等于0,即此处深度计算失效
     vis = True
+    first_print = False
+    rectangle_color = (0, 155, 50)  # 黑色 (0, 0, 0)
+    txt_color = (0, 255, 127)
     while True:
         t1 = time.time()
         _color_image, _depth_colormap, _depth_image_matrix = get_img_depth()
-        print("================> frame update GAP = ", time.time() - t1)
-        # cv2.line(_color_image, (320, 0), (320, 480), (0, 255, 0), 2)
-        _height = _depth_image_matrix.shape[0]
-        _width = _depth_image_matrix.shape[1]
-        print(f"=====acquired img has shape {_height} * {_width}==================================")
-        object_box1 = _depth_image_matrix[200:210, 100:120].astype(float)
+        if not first_print:
+            print("================> frame update GAP = ", time.time() - t1)
+            _height = _depth_image_matrix.shape[0]
+            _width = _depth_image_matrix.shape[1]
+            print(f"=====acquired img has shape {_height} * {_width}==================================")
+            first_print = True
+        # 在这里修改矩形框位置
+        x_min = 800
+        x_max = 820
+        y_min = 100
+        y_max = 110
+        print(f"x_min = {x_min} and x_max = {x_max}")
+        object_box1 = _depth_image_matrix[y_min:y_max, x_min:x_max].astype(float)
         no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
         dist1 = compute_mean(object_box1)
-        print(f"=====acquired img dist at [200:210, 100:120] is {dist1}, and no_depth area is {no_depth_area1}%")
+        print(f"=====acquired img dist at specific area is {dist1}, and no_depth area is {no_depth_area1}%")
         if vis:
+            # cv2.line(_color_image, (320, 0), (320, 480), (0, 255, 0), 2)
+            cv2.rectangle(_color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            cv2.rectangle(_depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            txt = "distance (estimated) = " + str(dist1)
+            cv2.putText(_color_image, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
+            cv2.putText(_depth_colormap, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
+
             cv2.namedWindow('RGB')
             cv2.namedWindow('Depth')
             cv2.imshow('RGB', _color_image)
@@ -135,7 +151,7 @@ def main():
             key = cv2.waitKey(1)
 
 
-def compute_mean(array_in, N=2):
+def compute_mean(array_in, N=6):
     """
     计算 array_in (ndarray) 中 非零 元素的均值 , 保留 N 位小数
     """
