@@ -32,7 +32,8 @@ device_product_line = str(device.get_info(rs.camera_info.product_line))
 
 depth_sensor = device.query_sensors()[0]
 if depth_sensor.supports(rs.option.emitter_enabled):
-    depth_sensor.set_option(rs.option.emitter_enabled, 1)
+    depth_sensor.set_option(rs.option.emitter_enabled, 0)
+
 found_rgb = False
 for s in device.sensors:
     if s.get_info(rs.camera_info.name) == 'RGB Camera':
@@ -154,9 +155,7 @@ def main():
     first_print = False
     rectangle_color = (0, 155, 50)  # 黑色 (0, 0, 0)
     txt_color = (0, 255, 127)
-    flag=True
     while True:
-        # flag=True
         t1 = time.time()
         _color_image, _depth_colormap, _depth_image_matrix, ir_image = get_img_depth_ir()
         if not first_print:
@@ -166,15 +165,11 @@ def main():
             print(f"=====acquired img has shape {_height} * {_width}==================================")
             first_print = True
         # 在这里修改矩形框位置
-        # x_min = 1105 + 10+50+5+20+2-6-2-6-4-7
-        # x_max = 1115 + 10+50+5+20+2-6-2-6-4-7
-        x_min = 780+20+2+1+3+2
-        x_max =790+20+2+1+3+2
-        y_min = 410-6+5+10-20
-        y_max = 420-6+5+10-20
-        if flag==True:
-            print(f"mean = {(x_max+x_min)/2}")
-            flag=False
+        x_min = 645 + 10 - 2
+        x_max = 655 + 10 - 2
+        y_min = 415 + 10 + 15
+        y_max = 425 + 10 + 15
+        # print(f"x_min = {x_min} and x_max = {x_max}")
         object_box1 = _depth_image_matrix[y_min:y_max, x_min:x_max].astype(float)
         no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
         dist1 = compute_mean(object_box1)
@@ -182,17 +177,16 @@ def main():
         # print(f"=====acquired img dist at specific area is {dist1}, and no_depth area is {no_depth_area1}%")
         if vis:
             # cv2.line(_color_image, (320, 0), (320, 480), (0, 255, 0), 2)
-            cv2.rectangle(_color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
-            cv2.rectangle(_depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
-            # txt = "distance = " + str(dist1)
-            txt =str(dist1)
-            cv2.putText(_color_image, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
-            cv2.putText(_depth_colormap, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
+            # cv2.rectangle(_color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            # cv2.rectangle(_depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            txt = "distance = " + str(dist1)
+            # cv2.putText(_color_image, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
+            # cv2.putText(_depth_colormap, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
 
             cv2.namedWindow('RGB')
             cv2.namedWindow('Depth')
-            # cv2.namedWindow('ir')
-            # cv2.imshow('ir', ir_image)
+            cv2.namedWindow('ir')
+            cv2.imshow('ir', ir_image)
             cv2.imshow('RGB', _color_image)
             cv2.imshow('Depth', _depth_colormap)
             key = cv2.waitKey(1)
