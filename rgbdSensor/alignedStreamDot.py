@@ -1,8 +1,11 @@
 # -*- encoding: utf-8 -*-
 """
-捕获img frame stream for dataset collection
-img size must be  640*360
-包括对齐的 1IR 2RGB 3Depth 和4未对齐（视野更大的）IR
+带不可视红外原点投影模式下(深度图质量会好一些，特别是在黑暗情况下),实时获得5种图 (img size must be  640*360)：
+1 RGB--H-FoV 70°
+2 Depth--和RGB对齐,每个像素是距离值，单位是米）
+3 Depth_color--对depth进行一个CV2的转换，以获得更好的可视化效果
+4 AlignedIR--和RGB对其的IR
+5 IR--未对齐的原生IR,有着更大的H-FoV和W-FoV
 """
 import time
 import pyrealsense2 as rs
@@ -104,21 +107,21 @@ def main():
             first_print = True
         # 在这里修改矩形框位置
         x_min = 300
-        x_max = 320
+        x_max = 400
         y_min = 200
-        y_max = 220
-        # print(f"x_min = {x_min} and x_max = {x_max}")
+        y_max = 300
         object_box1 = _depth_image_matrix[y_min:y_max, x_min:x_max].astype(float)
         no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
         dist1 = compute_mean(object_box1)
         print(f"=====acquired img dist at specific area is {dist1}, and no_depth area is {no_depth_area1}%")
         if vis:
-            # cv2.line(_color_image, (320, 0), (320, 480), (0, 255, 0), 2)
-            # cv2.rectangle(_color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
-            # cv2.rectangle(_depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            cv2.line(_color_image, (320, 0), (320, 360), (0, 222, 10), 2)
+            cv2.line(_color_image, (0, 180), (640, 180), (0, 222, 10), 2)
+            cv2.rectangle(_color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            cv2.rectangle(_depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
             txt = "distance = " + str(dist1)
-            # cv2.putText(_color_image, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
-            # cv2.putText(_depth_colormap, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
+            cv2.putText(_color_image, txt, (x_min - 5, y_min - 5), 0, 1, txt_color, 2, 4)
+            cv2.putText(_depth_colormap, txt, (x_min - 5, y_min - 5), 0, 1, txt_color, 2, 4)
             cv2.namedWindow('RGB')
             cv2.namedWindow('Depth')
             cv2.namedWindow('ir')
@@ -139,5 +142,26 @@ def compute_mean(array_in, N=6):
     return round(mean_value, N)
 
 
+def save_img():
+    count_current = 0
+    while True:
+        count_current += 1
+        _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
+        date = time.strftime("%Y-%m-%d-%H-%M-%S")  # 每秒存一次
+        rgb_name = "rgb-" + str(date) + "-" + str(count_current) + ".jpg"
+        depth_rgb_name = "depthRGB-" + str(date) + "-" + str(count_current) + ".jpg"
+        depth_name = "depth-" + str(date) + "-" + str(count_current) + ".npy"
+        ir_name = "ir-" + str(date) + "-" + str(count_current) + ".npy"
+        AlignedIR_name = "AlignedIR-" + str(date) + "-" + str(count_current) + ".npy"
+        cv2.imwrite(rgb_name, _color_image)
+        cv2.imwrite(depth_rgb_name, _depth_colormap)
+        np.save(depth_name, _depth_image_matrix)
+        np.save(ir_name, ir_image)
+        np.save(AlignedIR_name, aligned_ir_image)
+        print("current at ", count_current)
+        time.sleep(0.95)
+
+
 if __name__ == "__main__":
-    main()
+    main()  # 弹窗展示带dot的5种图像
+    # save_img()  # 5种图像间隔一秒存文件当前目录
