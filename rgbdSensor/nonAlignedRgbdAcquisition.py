@@ -64,7 +64,7 @@ clipping_distance_in_meters = 1  # 1 meter
 clipping_distance = clipping_distance_in_meters / depth_scale
 
 
-def compute_mean(array_in, N=2):
+def compute_mean(array_in, N=6):
     """
     计算 array_in (ndarray) 中 非零 元素的均值 , 保留 N 位小数
     """
@@ -73,36 +73,41 @@ def compute_mean(array_in, N=2):
     return round(mean_value, N)
 
 
-vis = False
-distance_min = 0.12  # 小于该值的深度值应等于0,即此处深度计算失效
-while True:
-    t1 = time.time()
+def get_frames():
     frames = pipeline.wait_for_frames()
-    img = frames.get_color_frame()
-    img = np.asanyarray(img.get_data())
+    img = frames.get_color_frame()  # 这里img是一个realsens的class
+    img = np.asanyarray(img.get_data())  # 这里img是一个ndarray 比如 720*1280*3
     img1 = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)  # 这个可以用来可视化 R G B 吗 ？
     dst = np.hstack((img, img1))
-    rgb_img = img
+    rgb_img = img1
 
     depth = frames.get_depth_frame()
-    depth_image = np.asanyarray(depth.get_data())  # 这个颜色非常的僵硬，看不清，所以转一下
+    depth_image = np.asanyarray(depth.get_data())
     depth_image_matrix = depth_image * depth_scale
     depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), 2)
+    return rgb_img, depth_image_matrix, depth_colormap
 
-    print("================> frame update GAP = ", time.time() - t1)
-    _height = depth_image_matrix.shape[0]
-    _width = depth_image_matrix.shape[1]
-    _height2 = rgb_img.shape[0]
-    _width2 = rgb_img.shape[1]
-    print(f"=====acquired D-frame has shape {_height} * {_width} and rgb-frame has shape {_height2} * {_width2}")
-    object_box1 = depth_image_matrix[200:210, 100:120].astype(float)
-    no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
-    dist1 = compute_mean(object_box1)
-    print(f"=====acquired img dist at [200:210, 100:120] is {dist1}, and no_depth area is {no_depth_area1}%")
 
-    if vis:
-        cv2.namedWindow('RGB')
-        cv2.namedWindow('Depth')
-        cv2.imshow('RGB', rgb_img)
-        cv2.imshow('Depth', depth_colormap)
-        key = cv2.waitKey(1)
+if __name__ == "__main__":
+    vis = True
+    distance_min = 0.12  # 小于该值的深度值应等于0,即此处深度计算失效
+    while True:
+        t1 = time.time()
+        rgb_img, depth_image_matrix, depth_colormap = get_frames()
+        print("================> frame update GAP = ", time.time() - t1)
+        _height = depth_image_matrix.shape[0]
+        _width = depth_image_matrix.shape[1]
+        _height2 = rgb_img.shape[0]
+        _width2 = rgb_img.shape[1]
+        print(f"=====acquired D-frame has shape {_height} * {_width} and rgb-frame has shape {_height2} * {_width2}")
+        object_box1 = depth_image_matrix[200:210, 100:120].astype(float)
+        no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
+        dist1 = compute_mean(object_box1)
+        print(f"=====acquired img dist at [200:210, 100:120] is {dist1}, and no_depth area is {no_depth_area1}%")
+
+        if vis:
+            cv2.namedWindow('RGB')
+            cv2.namedWindow('Depth')
+            cv2.imshow('RGB', rgb_img)
+            cv2.imshow('Depth', depth_colormap)
+            key = cv2.waitKey(1)
