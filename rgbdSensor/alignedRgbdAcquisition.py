@@ -1,30 +1,15 @@
 # -*- encoding: utf-8 -*-
 """
-aligned-rgbd-acquisition-fps-test.py
-测试硬件设备在all不同变量组合下的表现
-=====变量：img_size    -- edit about line-47 to change img_size
-1 640, 360   -- 更小的设备不支持了
-2 960, 540
-3 1280, 720
-=====变量：电源
-1  type-c 33w 5V-3A 直插供电
-2  电池 12.0V 11.5 11 11 10.5   ---再低就要机器人就要充电了
-=====变量：操作系统
-1  Ubuntu 20.04.5 LTS   -- 这个经典的的操作系统
-2  Raspberry Pi OS   -- 机器人用的这个操作系统
+深度+RGB对齐获取
 """
 import time
 import pyrealsense2 as rs
 import numpy as np
 import cv2
 
-# Create a pipeline
 pipeline = rs.pipeline()
-# Create a config and configure the pipeline to stream
-#  different resolutions of color and depth streams
 config = rs.config()
 
-# Get device product line for setting a supporting resolution
 pipeline_wrapper = rs.pipeline_wrapper(pipeline)
 pipeline_profile = config.resolve(pipeline_wrapper)
 device = pipeline_profile.get_device()
@@ -32,7 +17,8 @@ device_product_line = str(device.get_info(rs.camera_info.product_line))
 
 depth_sensor = device.query_sensors()[0]
 if depth_sensor.supports(rs.option.emitter_enabled):
-    depth_sensor.set_option(rs.option.emitter_enabled, 1)
+    depth_sensor.set_option(rs.option.emitter_enabled, 1)  # 红外圆形投影模式开关, 0关掉 1打开
+
 found_rgb = False
 for s in device.sensors:
     if s.get_info(rs.camera_info.name) == 'RGB Camera':
@@ -42,21 +28,8 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-# supported size
-# Depth
-# 320x240
-# 640x480
-# 1024x768
-#
-# Color
-# 640x360
-# 640x480
-# 960x540
-# 1280x720
-
 # config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
-# config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
-config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
+config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
 
 # config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
@@ -65,138 +38,14 @@ config.enable_stream(rs.stream.infrared)  # 启动IR支持
 
 # Start streaming
 profile = pipeline.start(config)
-
 # Getting the depth sensor's depth scale (see rs-align example for explanation)
 depth_sensor = profile.get_device().first_depth_sensor()
 depth_scale = depth_sensor.get_depth_scale()
 print("Depth Scale is: ", depth_scale)
-# depth_scale = 0.0010000000474974513
-# depth_scale = 0.0010000002474974513
-
-# We will be removing the background of objects more than   !!!!!!
-#  clipping_distance_in_meters meters away
-clipping_distance_in_meters = 1  # 1 meter
-clipping_distance = clipping_distance_in_meters / depth_scale
 
 # Create an align object
-# rs.align allows us to perform alignment of depth frames to others frames
-# The "align_to" is the stream type to which we plan to align depth frames.
 align_to = rs.stream.color
 align = rs.align(align_to)
-
-
-def get_img_depth():
-    """
-    实时获取当前的RGB和depth图；
-    像素级别对齐
-    返回: 彩色图 720*1280*3 ;彩色深度图 720*1280*3;矩阵形式的深度信息图 720*1280(黑白)（也可以可视化）（乘以了scale所以是距离值）
-    """
-    # Get frameset of color and depth
-    frames = pipeline.wait_for_frames()
-    # Align the depth frame to color frame
-    aligned_frames = align.process(frames)
-    # Get aligned frames
-    aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
-    color_frame = aligned_frames.get_color_frame()
-    # Validate that both frames are valid
-    if not aligned_depth_frame or not color_frame:
-        print("depth or RGB input not found!")
-
-    # compute distance to a pixel
-    depth_image = np.asanyarray(aligned_depth_frame.get_data())
-    depth_image_matrix = depth_image * depth_scale
-    color_image = np.asanyarray(color_frame.get_data())
-
-    # depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), 2)
-    # 彩色图  ,  彩色深度图 3,  矩阵形式的深度信息图 720*1280(黑白)（也可以可视化）（乘以了scale所以是距离值）
-    # 边界（双目测距无法检查的位置）没有深度信息，是黑色，深度数值为0
-    return color_image, depth_colormap, depth_image_matrix
-
-
-def get_img_depth_ir():
-    """
-    实时获取当前的RGB和depth图；
-    像素级别对齐
-    返回: 彩色图 720*1280*3 ;彩色深度图 720*1280*3;矩阵形式的深度信息图 720*1280(黑白)（也可以可视化）（乘以了scale所以是距离值）
-    """
-    # Get frameset of color and depth
-    frames = pipeline.wait_for_frames()
-    ir = frames.first(rs.stream.infrared)  # also I think this is possible: ir = frames[0]
-    # Align the depth frame to color frame
-    aligned_frames = align.process(frames)
-    # Get aligned frames
-    aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
-    color_frame = aligned_frames.get_color_frame()
-    # Validate that both frames are valid
-    if not aligned_depth_frame or not color_frame:
-        print("depth or RGB input not found!")
-
-    # compute distance to a pixel
-    depth_image = np.asanyarray(aligned_depth_frame.get_data())
-    depth_image_matrix = depth_image * depth_scale
-    color_image = np.asanyarray(color_frame.get_data())
-    ir_image = np.asanyarray(ir.get_data())
-
-    # depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), 2)
-    # 彩色图  ,  彩色深度图 3,  矩阵形式的深度信息图 720*1280(黑白)（也可以可视化）（乘以了scale所以是距离值）
-    # 边界（双目测距无法检查的位置）没有深度信息，是黑色，深度数值为0
-    return color_image, depth_colormap, depth_image_matrix, ir_image
-
-
-def main():
-    """
-    640, 480 -- img size
-    """
-    distance_min = 0.12  # 小于该值的深度值应等于0,即此处深度计算失效
-    vis = True
-    first_print = False
-    rectangle_color = (0, 155, 50)  # 黑色 (0, 0, 0)
-    txt_color = (0, 255, 127)
-    flag = True
-    while True:
-        # flag=True
-        t1 = time.time()
-        _color_image, _depth_colormap, _depth_image_matrix, ir_image = get_img_depth_ir()
-        if not first_print:
-            print("================> frame update GAP = ", time.time() - t1)
-            _height = _depth_image_matrix.shape[0]
-            _width = _depth_image_matrix.shape[1]
-            print(f"=====acquired img has shape {_height} * {_width}==================================")
-            first_print = True
-        # 在这里修改矩形框位置
-        # x_min = 1105 + 10+50+5+20+2-6-2-6-4-7
-        # x_max = 1115 + 10+50+5+20+2-6-2-6-4-7
-        x_min = 780 + 20 + 2 + 1 + 3 + 2
-        x_max = 790 + 20 + 2 + 1 + 3 + 2
-        y_min = 410 - 6 + 5 + 10 - 20
-        y_max = 420 - 6 + 5 + 10 - 20
-        if flag == True:
-            print(f"mean = {(x_max + x_min) / 2}")
-            flag = False
-        object_box1 = _depth_image_matrix[y_min:y_max, x_min:x_max].astype(float)
-        no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
-        dist1 = compute_mean(object_box1)
-        print(dist1)
-        # print(f"=====acquired img dist at specific area is {dist1}, and no_depth area is {no_depth_area1}%")
-        if vis:
-            cv2.line(_color_image, (640, 0), (640, 720), (0, 255, 0), 2)
-            cv2.line(_color_image, (0, 575), (1280, 575), (0, 255, 0), 2)
-            cv2.rectangle(_color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
-            cv2.rectangle(_depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
-            # txt = "distance = " + str(dist1)
-            txt = str(dist1)
-            cv2.putText(_color_image, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
-            cv2.putText(_depth_colormap, txt, (x_min - 5, y_min - 5), 0, 1.5, txt_color, 2, 4)
-
-            cv2.namedWindow('RGB')
-            cv2.namedWindow('Depth')
-            # cv2.namedWindow('ir')
-            # cv2.imshow('ir', ir_image)
-            cv2.imshow('RGB', _color_image)
-            cv2.imshow('Depth', _depth_colormap)
-            key = cv2.waitKey(1)
 
 
 def compute_mean(array_in, N=6):
@@ -206,6 +55,103 @@ def compute_mean(array_in, N=6):
     exist = (array_in != 0)
     mean_value = array_in.sum() / exist.sum()
     return round(mean_value, N)
+
+
+def get_img_depth():
+    """
+    实时获取当前的RGB和depth图；
+    像素级别对齐
+    """
+    frames = pipeline.wait_for_frames()
+    aligned_frames = align.process(frames)
+    aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
+    color_frame = aligned_frames.get_color_frame()
+    if not aligned_depth_frame or not color_frame:
+        print("depth or RGB input not found!")
+    depth_image = np.asanyarray(aligned_depth_frame.get_data())
+    depth_image_matrix = depth_image * depth_scale  # 乘以了scale以得到单位为米的距离值 （边界（双目测距无法检查的位置）没有深度信息，是黑色，深度数值为0）
+    color_image = np.asanyarray(color_frame.get_data())
+    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+    return color_image, depth_colormap, depth_image_matrix
+
+
+def get_img_depth_ir(align_ir=False):
+    frames = pipeline.wait_for_frames()
+    ir_frame = frames.first(rs.stream.infrared)  # 获取到IR帧
+    aligned_frames = align.process(frames)
+    aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
+    color_frame = aligned_frames.get_color_frame()
+    # ir_frame = aligned_frames.get_infrared_frame() # 这个也没对齐，因为API中不提供IR对齐，要自己弄
+    if not aligned_depth_frame or not color_frame or not ir_frame:
+        print("depth or RGB or IR input not found!")
+    # compute distance to a pixel
+    depth_image = np.asanyarray(aligned_depth_frame.get_data())
+    depth_image_matrix = depth_image * depth_scale  # 乘以了scale以得到单位为米的距离值 （边界（双目测距无法检查的位置）没有深度信息，是黑色，深度数值为0）
+    color_image = np.asanyarray(color_frame.get_data())
+    ir_image = np.asanyarray(ir_frame.get_data())
+    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+    aligned_ir = None
+    if align_ir:
+        aligned_ir, color_image = align_ir_rgb(ir_image, color_image)
+    return color_image, depth_colormap, depth_image_matrix, ir_image, aligned_ir
+
+
+def align_ir_rgb(ir_input, rgb_input):
+    """
+    work only for size (360, 640)
+    :param ir_input:  (360, 640)
+    :param rgb_input:  (360, 640,3)
+    :return:aligned ir and rgb
+    """
+    _height = rgb_input.shape[0]
+    _width = rgb_input.shape[1]
+    assert _height == 360 and _width == 640
+    cut_lef_right = ir_input[:, 86:(640 - 99)]
+    cut_up_down = cut_lef_right[51:(360 - 55), :]
+    ret_ir = cv2.resize(cut_up_down, dsize=(640, 340))
+    return ret_ir, rgb_input
+
+
+def main():
+    distance_min = 0.12  # 小于该值的深度值应等于0,即此处深度计算失效
+    vis = True
+    first_print = False
+    rectangle_color = (0, 155, 50)  # 黑色 (0, 0, 0)
+    txt_color = (0, 255, 127)
+    while True:
+        # 在这里修改矩形框位置
+        x_min = 300
+        x_max = 330
+        y_min = 100
+        y_max = 150
+        t1 = time.time()
+        color_image, depth_colormap, depth_image_matrix, ir_image, aligned_ir = get_img_depth_ir(align_ir=False)
+        if not first_print:
+            print("================> frame update GAP = ", time.time() - t1)
+            _height = depth_image_matrix.shape[0]
+            _width = depth_image_matrix.shape[1]
+            print(f"=====acquired img has shape {_height} * {_width}==================================")
+            print(f"mean = {x_max}+{x_min}/2 ={(x_max + x_min) / 2}")
+            first_print = True
+        object_box1 = depth_image_matrix[y_min:y_max, x_min:x_max].astype(float)
+        no_depth_area1 = round(np.count_nonzero(object_box1 < distance_min) / object_box1.size, 2)
+        dist1 = compute_mean(object_box1)
+        print(dist1)
+        # print(f"=====acquired img dist at specific area is {dist1}, and no_depth area is {no_depth_area1}%")
+        if vis:
+            cv2.line(color_image, (640, 0), (640, 720), (0, 255, 0), 2)
+            cv2.line(color_image, (0, 575), (1280, 575), (0, 255, 0), 2)
+            cv2.rectangle(color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            cv2.rectangle(depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
+            txt = str(dist1)
+            cv2.putText(color_image, txt, (x_min - 10, y_min - 10), 0, 1.5, txt_color, 2, 4)
+            cv2.putText(depth_colormap, txt, (x_min - 10, y_min - 10), 0, 1.5, txt_color, 2, 4)
+
+            cv2.namedWindow('RGB')
+            cv2.namedWindow('Depth')
+            cv2.imshow('RGB', color_image)
+            cv2.imshow('Depth', depth_colormap)
+            key = cv2.waitKey(1)
 
 
 if __name__ == "__main__":
