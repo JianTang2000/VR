@@ -181,7 +181,8 @@ def main():
         print(dist1)
         # print(f"=====acquired img dist at specific area is {dist1}, and no_depth area is {no_depth_area1}%")
         if vis:
-            # cv2.line(_color_image, (320, 0), (320, 480), (0, 255, 0), 2)
+            cv2.line(_color_image, (640, 0), (640, 720), (0, 255, 0), 2)
+            cv2.line(_color_image, (0, 575), (1280, 575), (0, 255, 0), 2)
             cv2.rectangle(_color_image, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
             cv2.rectangle(_depth_colormap, (x_min, y_min), (x_max, y_max), rectangle_color, 2)
             # txt = "distance = " + str(dist1)
