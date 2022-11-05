@@ -86,7 +86,7 @@ def align_ir_rgb(ir_input, rgb_input):
     assert _height == 360 and _width == 640
     cut_lef_right = ir_input[:, 86:(640 - 99)]
     cut_up_down = cut_lef_right[51:(360 - 55), :]
-    ret_ir = cv2.resize(cut_up_down, dsize=(640, 340))
+    ret_ir = cv2.resize(cut_up_down, dsize=(_width, _height))
     return ret_ir, rgb_input
 
 
@@ -163,5 +163,5 @@ def save_img():
 
 
 if __name__ == "__main__":
-    main()  # 弹窗展示带dot的5种图像
-    # save_img()  # 5种图像间隔一秒存文件当前目录
+    # main()  # 弹窗展示带dot的5种图像
+    save_img()  # 5种图像间隔一秒存文件当前目录
