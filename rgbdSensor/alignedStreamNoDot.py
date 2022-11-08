@@ -39,7 +39,8 @@ config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
-config.enable_stream(rs.stream.infrared, 640, 360)  # 启动IR支持
+# config.enable_stream(rs.stream.infrared, 640, 360)  # 启动IR支持
+config.enable_stream(rs.stream.infrared)  # 启动IR支持
 
 # Start streaming
 profile = pipeline.start(config)
@@ -86,7 +87,7 @@ def align_ir_rgb(ir_input, rgb_input):
     assert _height == 360 and _width == 640
     cut_lef_right = ir_input[:, 86:(640 - 99)]
     cut_up_down = cut_lef_right[51:(360 - 55), :]
-    ret_ir = cv2.resize(cut_up_down, dsize=(_width, _height))
+    ret_ir = cv2.resize(cut_up_down, dsize=(640, 340))
     return ret_ir, rgb_input
 
 
@@ -159,9 +160,14 @@ def save_img():
         np.save(ir_name, ir_image)
         np.save(AlignedIR_name, aligned_ir_image)
         print("current at ", count_current)
-        time.sleep(0.95)
+        cv2.namedWindow('RGB')
+        cv2.imshow('RGB', _color_image)
+        key = cv2.waitKey(1)
+        time.sleep(0.92)
 
 
 if __name__ == "__main__":
-    # main()  # 弹窗展示带dot的5种图像
-    save_img()  # 5种图像间隔一秒存文件当前目录
+    main()  # 弹窗展示带dot的5种图像
+    # time.sleep(3)
+    # save_img()  # 5种图像间隔一秒存文件当前目录
+    # print(123)
