@@ -166,8 +166,39 @@ def save_img():
         time.sleep(0.92)
 
 
+def save_single_img(desc="-fu-20"):
+    """
+    desc="-fu-20"
+    desc="-yang-20"
+    desc="-ping-20"
+    """
+    count = 0
+    _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
+    time.sleep(1)
+    while count < 60:
+        _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
+        cv2.namedWindow('RGB')
+        cv2.imshow('RGB', _color_image)
+        key = cv2.waitKey(1)
+        count += 1
+    print("  start to take img ! ... ")
+    _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
+    date = time.strftime("%Y-%m-%d-%H-%M-%S")  # 每秒存一次
+    rgb_name = "rgb-" + str(date) + "-" + str(desc) + ".jpg"
+    depth_rgb_name = "depthRGB-" + str(date) + "-" + str(desc) + ".jpg"
+    depth_name = "depth-" + str(date) + "-" + str(desc) + ".npy"
+    ir_name = "ir-" + str(date) + "-" + str(desc) + ".npy"
+    AlignedIR_name = "AlignedIR-" + str(date) + "-" + str(desc) + ".npy"
+    cv2.imwrite(rgb_name, _color_image)
+    cv2.imwrite(depth_rgb_name, _depth_colormap)
+    np.save(depth_name, _depth_image_matrix)
+    np.save(ir_name, ir_image)
+    np.save(AlignedIR_name, aligned_ir_image)
+
+
 if __name__ == "__main__":
-    main()  # 弹窗展示带dot的5种图像
+    # main()  # 弹窗展示带dot的5种图像
     # time.sleep(3)
     # save_img()  # 5种图像间隔一秒存文件当前目录
     # print(123)
+    save_single_img(desc="-fu-20")

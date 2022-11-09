@@ -86,8 +86,8 @@ def copy_rename_files_all(new_name_start="1003-paper-1-"):
 
 
 def split_train_test():
-    todo_path = r"C:\Users\jiant\Desktop\tmp"
-    save_path = r'C:\Users\jiant\Desktop\data\V&R-objectDetectionData\train-on-server\figX-virtual-ball'
+    todo_path = r"C:\Users\jiant\Desktop\data\indoor-scene\chair"
+    save_path = r'C:\Users\jiant\Desktop\data\indoor-scene\chair-train'
     if not os.path.isdir(os.path.join(save_path, r'images\train')):
         os.makedirs(os.path.join(save_path, r'images\train'))
     if not os.path.isdir(os.path.join(save_path, r'images\val')):
@@ -105,8 +105,10 @@ def split_train_test():
     shutil.rmtree(os.path.join(save_path, r'labels\val'))
     os.mkdir(os.path.join(save_path, r'labels\val'))
 
-    files = os.listdir(todo_path)
-    files = [i for i in files if i.endswith('.jpg')]
+    files_all = os.listdir(todo_path)
+    files = [i for i in files_all if i.startswith("rgb") and i.endswith('.jpg')]
+    txts = [i for i in files_all if i.startswith("rgb") and i.endswith('.txt')]
+    files = [i for i in files if i.replace(".jpg", ".txt") in txts]
     for file in files:
         if tools.random_true(0.7):
             img_path = os.path.join(todo_path, file)
@@ -150,7 +152,7 @@ def txt_classes_num_summary():
     for txt in txts:
         with open(os.path.join(file_path, txt), 'r') as f1:
             lines = f1.readlines()  # read each line
-        txt_context = [i.replace("\n", "") for i in lines if i is not '\n']
+        txt_context = [i.replace("\n", "") for i in lines if i != '\n']
         print("txt file name is :", txt)
         print("raw txt is :", lines)
         print("clearn txt is :", txt_context)
@@ -168,8 +170,8 @@ def txt_classes_num_summary():
 if __name__ == "__main__":
     # reduce_img(p=0.1)
     # copy_rename_files_all()
-    # split_train_test()
+    split_train_test()
     # txt_classes_num_summary()
-    copy_txt_to_img()
+    # copy_txt_to_img()
     # reduce_train_img_label(p=0.18)
     # del_non_img_label()
