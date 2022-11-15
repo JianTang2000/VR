@@ -86,8 +86,8 @@ def copy_rename_files_all(new_name_start="1003-paper-1-"):
 
 
 def split_train_test():
-    todo_path = r"C:\Users\jiant\Desktop\data\indoor-scene\chair"
-    save_path = r'C:\Users\jiant\Desktop\data\indoor-scene\chair-train'
+    todo_path = r"C:\Users\jiant\OneDrive\SJTU\7data\indoor-scene\1111-public\all_in_one\all"
+    save_path = r'C:\Users\jiant\OneDrive\SJTU\7data\indoor-scene\1111-public\all_in_one\all-to-train'
     if not os.path.isdir(os.path.join(save_path, r'images\train')):
         os.makedirs(os.path.join(save_path, r'images\train'))
     if not os.path.isdir(os.path.join(save_path, r'images\val')):
@@ -106,8 +106,10 @@ def split_train_test():
     os.mkdir(os.path.join(save_path, r'labels\val'))
 
     files_all = os.listdir(todo_path)
-    files = [i for i in files_all if i.startswith("rgb") and i.endswith('.jpg')]
-    txts = [i for i in files_all if i.startswith("rgb") and i.endswith('.txt')]
+    # files = [i for i in files_all if i.startswith("rgb") and i.endswith('.jpg')]
+    # txts = [i for i in files_all if i.startswith("rgb") and i.endswith('.txt')]
+    files = [i for i in files_all if i.endswith('.jpg')]
+    txts = [i for i in files_all if i.endswith('.txt')]
     files = [i for i in files if i.replace(".jpg", ".txt") in txts]
     for file in files:
         if tools.random_true(0.7):

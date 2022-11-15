@@ -17,7 +17,7 @@ device_product_line = str(device.get_info(rs.camera_info.product_line))
 
 depth_sensor = device.query_sensors()[0]
 if depth_sensor.supports(rs.option.emitter_enabled):
-    depth_sensor.set_option(rs.option.emitter_enabled, 1)  # 红外圆形投影模式开关, 0关掉 1打开
+    depth_sensor.set_option(rs.option.emitter_enabled, 0)  # 红外圆形投影模式开关, 0关掉 1打开
 
 found_rgb = False
 for s in device.sensors:
@@ -120,10 +120,10 @@ def main():
     txt_color = (0, 255, 127)
     while True:
         # 在这里修改矩形框位置
-        x_min = 300
-        x_max = 330
-        y_min = 100
-        y_max = 150
+        x_min = 620
+        x_max = 660
+        y_min = 340
+        y_max = 380
         t1 = time.time()
         color_image, depth_colormap, depth_image_matrix, ir_image, aligned_ir = get_img_depth_ir(align_ir=False)
         if not first_print:
