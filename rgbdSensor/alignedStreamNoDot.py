@@ -8,9 +8,10 @@
 5 IR--未对齐的原生IR,有着更大的H-FoV和W-FoV
 """
 import time
-import pyrealsense2 as rs
-import numpy as np
+
 import cv2
+import numpy as np
+import pyrealsense2 as rs
 
 pipeline = rs.pipeline()
 config = rs.config()
@@ -143,57 +144,6 @@ def compute_mean(array_in, N=6):
     return round(mean_value, N)
 
 
-def save_img():
-    count_current = 0
-    while True:
-        count_current += 1
-        _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
-        date = time.strftime("%Y-%m-%d-%H-%M-%S")  # 每秒存一次
-        rgb_name = "rgb-" + str(date) + "-" + str(count_current) + ".jpg"
-        depth_rgb_name = "depthRGB-" + str(date) + "-" + str(count_current) + ".jpg"
-        depth_name = "depth-" + str(date) + "-" + str(count_current) + ".npy"
-        ir_name = "ir-" + str(date) + "-" + str(count_current) + ".npy"
-        AlignedIR_name = "AlignedIR-" + str(date) + "-" + str(count_current) + ".npy"
-        cv2.imwrite(rgb_name, _color_image)
-        cv2.imwrite(depth_rgb_name, _depth_colormap)
-        np.save(depth_name, _depth_image_matrix)
-        np.save(ir_name, ir_image)
-        np.save(AlignedIR_name, aligned_ir_image)
-        print("current at ", count_current)
-        cv2.namedWindow('RGB')
-        cv2.imshow('RGB', _color_image)
-        key = cv2.waitKey(1)
-        time.sleep(0.92)
-
-
-def save_single_img(desc="-fu-20"):
-    """
-    desc="-fu-20"
-    desc="-yang-20"
-    desc="-ping-20"
-    """
-    count = 0
-    _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
-    time.sleep(1)
-    while count < 60:
-        _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
-        cv2.namedWindow('RGB')
-        cv2.imshow('RGB', _color_image)
-        key = cv2.waitKey(1)
-        count += 1
-    print("  start to take img ! ... ")
-    _color_image, _depth_colormap, _depth_image_matrix, ir_image, aligned_ir_image = get_img_depth_ir(align_ir=True)
-    date = time.strftime("%Y-%m-%d-%H-%M-%S")  # 每秒存一次
-    rgb_name = "rgb-" + str(date) + "-" + str(desc) + ".jpg"
-    depth_rgb_name = "depthRGB-" + str(date) + "-" + str(desc) + ".jpg"
-    depth_name = "depth-" + str(date) + "-" + str(desc) + ".npy"
-    ir_name = "ir-" + str(date) + "-" + str(desc) + ".npy"
-    AlignedIR_name = "AlignedIR-" + str(date) + "-" + str(desc) + ".npy"
-    cv2.imwrite(rgb_name, _color_image)
-    cv2.imwrite(depth_rgb_name, _depth_colormap)
-    np.save(depth_name, _depth_image_matrix)
-    np.save(ir_name, ir_image)
-    np.save(AlignedIR_name, aligned_ir_image)
 
 
 if __name__ == "__main__":

@@ -1,15 +1,21 @@
 # -*- encoding: utf-8 -*-
 """
 获取 RGB depth 和 IR 但是不要求对齐,对齐操作耗费计算资源,不对齐速度会快很多
+可选择 是否打开红外投影 by open_dot
 """
 
 import time
-import pyrealsense2 as rs
-import numpy as np
+
 import cv2
+import numpy as np
+import pyrealsense2 as rs
 
 # #############################
 open_dot = 1  # 红外圆形投影模式开关, 0关掉 1打开
+img_size_W = 1280
+img_size_H = 720
+# img_size_W = 640
+# img_size_H = 320
 # #############################
 pipeline = rs.pipeline()
 config = rs.config()
@@ -31,13 +37,13 @@ if not found_rgb:
     print("The demo requires Depth camera with Color sensor")
     exit(0)
 
-config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
-# config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
+# config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
+config.enable_stream(rs.stream.depth, img_size_W, img_size_H, rs.format.z16, 30)
 
-config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
+# config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
-# config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
-config.enable_stream(rs.stream.infrared, 640, 360)  # 启动IR支持
+config.enable_stream(rs.stream.color, img_size_W, img_size_H, rs.format.bgr8, 30)
+config.enable_stream(rs.stream.infrared)  # 启动IR支持
 
 # Start streaming
 profile = pipeline.start(config)

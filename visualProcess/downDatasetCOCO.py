@@ -1,11 +1,12 @@
+import argparse
+import json
+import os
+import shutil
+
 import fiftyone as fo
 import fiftyone.zoo as foz
-import os
-import json
-from tqdm import tqdm
-import argparse
-import shutil
 import numpy as np
+from tqdm import tqdm
 
 
 def random_true(prob):
@@ -17,7 +18,7 @@ def download_coco():
     dataset = foz.load_zoo_dataset(
         "coco-2017",
         split="train",
-        max_samples=20000,
+        max_samples=50000,
         shuffle=True,
     )
 
@@ -29,7 +30,7 @@ def download_coco():
         label_types=["detections"],
         classes=["apple", "sandwich", "cup", "bowl", "spoon", "knife", "bottle", "sink", "refrigerator",
                  "dining table", "chair", "couch", "bed", "book", "cell phone", "person", "toilet"],
-        max_samples=20000,
+        max_samples=50000,
     )
 
     session.dataset = dataset
@@ -214,25 +215,14 @@ def leave_out_boxes():
 
 def leave_out_txt_hard():
     """
-    以下类别数量特别的多 丢票
-    cup 899
-    bottle 1025
-    chair 1791
-    book 1161
-    person 11004
     wanted_classes = ["apple", "sandwich", "cup", "bowl", "spoon", "knife", "bottle", "sink", "refrigerator",
                   "dining table", "chair", "couch", "bed", "book", "cell phone", "person", "toilet"]
     wanted_id = [47, 48, 41, 45, 44, 43, 39, 71, 72, 60, 56, 57, 59, 73, 67, 0, 61]
-
-    person 还是很多,随机扔掉一些
+    一张图中boxes数量超过 15 的扔掉
     """
     txts = os.listdir(txt_dir_path)
     for txt in txts:
         person_count = 0
-        chair_count = 0
-        book_count = 0
-        bottle_count = 0
-        cup_count = 0
         with open(os.path.join(txt_dir_path, txt)) as f:
             label_i = f.read().split('\n')
             label_i = [i for i in label_i if i != ""]
@@ -240,20 +230,15 @@ def leave_out_txt_hard():
             id_i = int(box.split(" ")[0])
             if id_i == 0:
                 person_count += 1
-            elif id_i == 56:
-                chair_count += 1
-            elif id_i == 73:
-                book_count += 1
-            elif id_i == 39:
-                bottle_count += 1
-            elif id_i == 41:
-                cup_count += 1
-        if person_count > 3 or chair_count > 4 or book_count > 3 or bottle_count > 4 or cup_count > 4:
-            print("hard img remove...")
+        if person_count > 4:
+            print("img remove due to person count > 4...")
+            os.remove(os.path.join(txt_dir_path, txt))
+        elif len(label_i) > 15:
+            print("img remove due to boxes count > 15...")
             os.remove(os.path.join(txt_dir_path, txt))
         else:
-            if person_count > 0 and random_true(0.9):
-                print("person img remove...")
+            if person_count > 2 and len(label_i) <= 5 and random_true(0.8):  # 当全是人的时候
+                print("img remove due to person and random ...")
                 os.remove(os.path.join(txt_dir_path, txt))
 
 
@@ -345,12 +330,12 @@ def summary_boxes():
 
 
 if __name__ == '__main__':
-    # download_coco()
-    extract_coco()  # jason to txt
-    print_obj_id()
-    leave_out_txt()  # 删掉不带关键obj的txt
-    leave_out_boxes()  # 删掉不相关obj的boxes
-    leave_out_txt_hard()  # 删掉obj太多太困难的txt
-    leave_out_img()  # 把所有有txt的img放到新文件夹
-    summary_boxes()  # 对obj box 数量进行统计打印
-    txt_to_custom_txt()  # 把coco的classes id 改成自定义的class id
+    download_coco()
+    # extract_coco()  # jason to txt
+    # print_obj_id()
+    # leave_out_txt()  # 删掉不带关键obj的txt
+    # leave_out_boxes()  # 删掉不相关obj的boxes
+    # leave_out_txt_hard()  # 删掉obj太多太困难的txt
+    # leave_out_img()  # 把所有有txt的img放到新文件夹
+    # summary_boxes()  # 对obj box 数量进行统计打印
+    # txt_to_custom_txt()  # 把coco的classes id 改成自定义的class id

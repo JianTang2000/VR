@@ -3,9 +3,18 @@
 深度+RGB对齐获取
 """
 import time
-import pyrealsense2 as rs
-import numpy as np
+
 import cv2
+import numpy as np
+import pyrealsense2 as rs
+
+# #############################
+open_dot = 1  # 红外圆形投影模式开关, 0关掉 1打开
+# img_size_W = 1280
+# img_size_H = 720
+img_size_W = 1280
+img_size_H = 720
+# #############################
 
 pipeline = rs.pipeline()
 config = rs.config()
@@ -17,7 +26,7 @@ device_product_line = str(device.get_info(rs.camera_info.product_line))
 
 depth_sensor = device.query_sensors()[0]
 if depth_sensor.supports(rs.option.emitter_enabled):
-    depth_sensor.set_option(rs.option.emitter_enabled, 0)  # 红外圆形投影模式开关, 0关掉 1打开
+    depth_sensor.set_option(rs.option.emitter_enabled, open_dot)  # 红外圆形投影模式开关, 0关掉 1打开
 
 found_rgb = False
 for s in device.sensors:
@@ -29,11 +38,11 @@ if not found_rgb:
     exit(0)
 
 # config.enable_stream(rs.stream.depth, 640, 360, rs.format.z16, 30)
-config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
+config.enable_stream(rs.stream.depth, img_size_W, img_size_H, rs.format.z16, 30)
 
 # config.enable_stream(rs.stream.color, 640, 360, rs.format.bgr8, 30)
 # config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
-config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+config.enable_stream(rs.stream.color, img_size_W, img_size_H, rs.format.bgr8, 30)
 config.enable_stream(rs.stream.infrared)  # 启动IR支持
 
 # Start streaming
@@ -98,21 +107,27 @@ def get_img_depth_ir(align_ir=False):
 
 def align_ir_rgb(ir_input, rgb_input):
     """
-    work only for size (360, 640)
-    :param ir_input:  (360, 640)
-    :param rgb_input:  (360, 640,3)
+    work only for size (360, 640) or (640,1280)
+    :param ir_input:
+    :param rgb_input:
     :return:aligned ir and rgb
     """
     _height = rgb_input.shape[0]
     _width = rgb_input.shape[1]
-    assert _height == 360 and _width == 640
-    cut_lef_right = ir_input[:, 86:(640 - 99)]
-    cut_up_down = cut_lef_right[51:(360 - 55), :]
-    ret_ir = cv2.resize(cut_up_down, dsize=(640, 340))
+    assert _height == 360 or _height == 720
+    if _height == 360:
+        cut_lef_right = ir_input[:, 86:(640 - 99)]
+        cut_up_down = cut_lef_right[51:(360 - 55), :]
+        ret_ir = cv2.resize(cut_up_down, dsize=(_width, _height))
+    else:
+        cut_lef_right = ir_input[:, 171:(1280 - 198)]
+        cut_up_down = cut_lef_right[102:(780 - 110), :]
+        ret_ir = cv2.resize(cut_up_down, dsize=(_width, _height))
     return ret_ir, rgb_input
 
 
 def main():
+    """实时获取sensor图片并弹框展示"""
     distance_min = 0.12  # 小于该值的深度值应等于0,即此处深度计算失效
     vis = True
     first_print = False
@@ -120,12 +135,12 @@ def main():
     txt_color = (0, 255, 127)
     while True:
         # 在这里修改矩形框位置
-        x_min = 620
-        x_max = 660
-        y_min = 340
-        y_max = 380
+        x_min = 100
+        x_max = 100 + 20
+        y_min = 200
+        y_max = 200 + 40
         t1 = time.time()
-        color_image, depth_colormap, depth_image_matrix, ir_image, aligned_ir = get_img_depth_ir(align_ir=False)
+        color_image, depth_colormap, depth_image_matrix, ir_image, aligned_ir = get_img_depth_ir(align_ir=True)
         if not first_print:
             print("================> frame update GAP = ", time.time() - t1)
             _height = depth_image_matrix.shape[0]
@@ -149,6 +164,8 @@ def main():
 
             cv2.namedWindow('RGB')
             cv2.namedWindow('Depth')
+            cv2.namedWindow('ir')
+            cv2.imshow('ir', aligned_ir)
             cv2.imshow('RGB', color_image)
             cv2.imshow('Depth', depth_colormap)
             key = cv2.waitKey(1)
